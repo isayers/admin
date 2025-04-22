@@ -1,0 +1,1586 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Employee Roster System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    <style>
+        /* Login Page Styles */
+        .login-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f5f5f5;
+        }
+        .login-card {
+            width: 100%;
+            max-width: 400px;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            background-color: white;
+        }
+        .login-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .login-logo {
+            max-width: 150px;
+            margin-bottom: 20px;
+        }
+        
+        /* Main App Styles (hidden initially) */
+        #app-container {
+            display: none;
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container-fluid {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            padding: 20px;
+            overflow-x: auto;
+        }
+        .header {
+            background-color: #343a40;
+            color: white;
+            padding: 10px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+        .sticky-header {
+            position: sticky;
+            top: 0;
+            background-color: white;
+            z-index: 100;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .sticky-col {
+            position: sticky;
+            left: 0;
+            background-color: white;
+            z-index: 50;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+        }
+        .sticky-corner {
+            position: sticky;
+            left: 0;
+            top: 0;
+            background-color: #343a40;
+            color: white;
+            z-index: 150;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+            min-width: 80px;
+        }
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .status-cell {
+            padding: 0;
+            position: relative;
+        }
+        .status-select {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background-color: transparent;
+            text-align: center;
+            cursor: pointer;
+        }
+        .status-select:focus {
+            outline: 2px solid #ffc107;
+        }
+        .day-date {
+            font-size: 0.8em;
+            color: #666;
+        }
+        .btn-action {
+            margin: 5px;
+        }
+        .search-container {
+            margin-bottom: 20px;
+        }
+        .status-legend {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .status-item {
+            display: flex;
+            align-items: center;
+            margin: 0 10px;
+        }
+        .status-color {
+            width: 20px;
+            height: 20px;
+            margin-right: 5px;
+            border: 1px solid #ddd;
+        }
+        .loading {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            z-index: 200;
+            justify-content: center;
+            align-items: center;
+        }
+        .loading-content {
+            background-color: white;
+            padding: 20px;
+            border-radius: 5px;
+            text-align: center;
+        }
+        .editable-input {
+            width: 100%;
+            border: none;
+            background-color: transparent;
+            text-align: center;
+        }
+        .editable-input:focus {
+            outline: 2px solid #ffc107;
+            background-color: white;
+        }
+        .editable-select {
+            width: 100%;
+            border: none;
+            background-color: transparent;
+            text-align: center;
+            cursor: pointer;
+        }
+        .editable-select:focus {
+            outline: 2px solid #ffc107;
+            background-color: white;
+        }
+        .dropdown-menu {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .print-dropdown {
+            position: relative;
+            display: inline-block;
+        }
+        .department-dropdown {
+            position: relative;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body>
+    <!-- Login Page -->
+    <div id="login-container" class="login-container">
+        <div class="login-card">
+            <div class="login-header">
+                <img src="https://via.placeholder.com/150x50?text=WE+ONE+LOGO" alt="Company Logo" class="login-logo">
+                <h2>Employee Roster System</h2>
+                <p>Please sign in to continue</p>
+            </div>
+            <form id="login-form">
+                <div class="mb-3">
+                    <label for="email" class="form-label">Email Address</label>
+                    <input type="email" class="form-control" id="email" required>
+                </div>
+                <div class="mb-3">
+                    <label for="password" class="form-label">Password</label>
+                    <input type="password" class="form-control" id="password" required>
+                </div>
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-primary">Sign In</button>
+                </div>
+                <div class="mt-3 text-center">
+                    <a href="#" id="forgot-password">Forgot password?</a>
+                </div>
+            </form>
+            <div id="login-error" class="alert alert-danger mt-3" style="display: none;"></div>
+        </div>
+    </div>
+
+    <!-- Main App Container (initially hidden) -->
+    <div id="app-container">
+        <div class="loading">
+            <div class="loading-content">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-2">Loading roster data...</p>
+            </div>
+        </div>
+
+        <div class="container-fluid">
+            <div class="header">
+                <h1 class="text-center">Employee Roster System</h1>
+                <div class="row">
+                    <div class="col-md-6">
+                        <h5 id="roster-title">FG8 MAY 2025 CONSOLIDATED ROSTER</h5>
+                        <h6 id="department-title">Department: DNATA</h6>
+                    </div>
+                    <div class="col-md-6 text-end">
+                        <button id="save-btn" class="btn btn-success btn-action">Save Changes</button>
+                        <button id="add-row-btn" class="btn btn-primary btn-action">Add Employee</button>
+                        <button id="export-btn" class="btn btn-info btn-action">Export to Excel</button>
+                        <button id="next-month-btn" class="btn btn-warning btn-action">Next Month</button>
+                        
+                        <!-- Print Button with Dropdown -->
+                        <div class="print-dropdown">
+                            <button id="print-btn" class="btn btn-secondary btn-action dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                Print
+                            </button>
+                            <ul class="dropdown-menu" id="print-dropdown-menu">
+                                <li><h6 class="dropdown-header">Select Shift to Print</h6></li>
+                                <!-- Status options will be added here by JavaScript -->
+                            </ul>
+                        </div>
+                        
+                        <!-- Departments Button with Dropdown -->
+                        <div class="department-dropdown">
+                            <button id="department-btn" class="btn btn-dark btn-action dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                Departments
+                            </button>
+                            <ul class="dropdown-menu" id="department-dropdown-menu">
+                                <li><h6 class="dropdown-header">Select Department</h6></li>
+                                <li><a class="dropdown-item" href="#" data-department="DNATA">DNATA</a></li>
+                                <!-- Other departments will be added here by JavaScript -->
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="#" data-department="new" data-bs-toggle="modal" data-bs-target="#addDepartmentModal">Add New Department</a></li>
+                            </ul>
+                        </div>
+                        <button id="logout-btn" class="btn btn-outline-light btn-action">Logout</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="status-legend">
+                <div class="status-item">
+                    <div class="status-color" style="background-color: #e3f2fd;"></div>
+                    <span>VI - Vacation/Leave</span>
+                </div>
+                <div class="status-item">
+                    <div class="status-color" style="background-color: #fff8e1;"></div>
+                    <span>VJ - Vacation/Job</span>
+                </div>
+                <div class="status-item">
+                    <div class="status-color" style="background-color: #e8f5e9;"></div>
+                    <span>YY - (00:00-00:00)</span>
+                </div>
+                <div class="status-item">
+                    <div class="status-color" style="background-color: #ffebee;"></div>
+                    <span>NB - (06:00-19:00)</span>
+                </div>
+                <div class="status-item">
+                    <div class="status-color" style="background-color: #f3e5f5;"></div>
+                    <span>DF - (18:00-07:00)</span>
+                </div>
+                <div class="status-item">
+                    <div class="status-color" style="background-color: #e0f7fa;"></div>
+                    <span>EX - (08:00-20:00)</span>
+                </div>
+                <div class="status-item">
+                    <div class="status-color" style="background-color: #fff3e0;"></div>
+                    <span>NR - (20:00-08:00)</span>
+                </div>
+                <div class="status-item">
+                    <div class="status-color" style="background-color: #e8eaf6;"></div>
+                    <span>DX - (09:00-21:00)</span>
+                </div>
+                <div class="status-item">
+                    <div class="status-color" style="background-color: #f1f8e9;"></div>
+                    <span>NI - (21:00-09:00)</span>
+                </div>
+            </div>
+
+            <div class="search-container">
+                <div class="row">
+                    <div class="col-md-3">
+                        <input type="text" id="search-name" class="form-control" placeholder="Search by name...">
+                    </div>
+                    <div class="col-md-3">
+                        <input type="text" id="search-id" class="form-control" placeholder="Search by ID...">
+                    </div>
+                    <div class="col-md-3">
+                        <select id="filter-area" class="form-select">
+                            <option value="">All Areas</option>
+                            <option value="FG8 BDN/ACP/DLV">FG8 BDN/ACP/DLV</option>
+                            <option value="FG2 & FedEx">FG2 & FedEx</option>
+                            <option value="FG5B Acceptance">FG5B Acceptance</option>
+                            <option value="FG5B ACCP Loader">FG5B ACCP Loader</option>
+                            <option value="FG4">FG4</option>
+                            <option value="FG4 Export Ramp">FG4 Export Ramp</option>
+                            <option value="FG5 Delivery CA">FG5 Delivery CA</option>
+                            <option value="FG5 Breakdown CA">FG5 Breakdown CA</option>
+                            <option value="FG5 RFS DOCK CA">FG5 RFS DOCK CA</option>
+                            <option value="FG5 Ramp ULD F.L.O">FG5 Ramp ULD F.L.O</option>
+                            <option value="FG5-IMPORT BREAKDOWN">FG5-IMPORT BREAKDOWN</option>
+                            <option value="FG5 DELIVERY F.L.O">FG5 DELIVERY F.L.O</option>
+                            <option value="FG5 BREAKDOWN LOADERS">FG5 BREAKDOWN LOADERS</option>
+                            <option value="FG5 DELIVERY LOADERS">FG5 DELIVERY LOADERS</option>
+                            <option value="FG5 CASUAL POOL LOADER">FG5 CASUAL POOL LOADER</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <select id="filter-designation" class="form-select">
+                            <option value="">All Designations</option>
+                            <option value="LOADER">LOADER</option>
+                            <option value="Tractor Driver">Tractor Driver</option>
+                            <option value="Forklift Operator">Forklift Operator</option>
+                            <option value="Cargo Agent">Cargo Agent</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div style="overflow-x: auto;">
+                <table id="roster-table" class="table table-bordered">
+                    <thead class="sticky-header">
+                        <tr>
+                            <th class="sticky-corner">Sr No</th>
+                            <th>WE ONE ID</th>
+                            <th>EK ID</th>
+                            <th>Employee Name</th>
+                            <th>AREA</th>
+                            <th>DESIGNATION</th>
+                            <!-- Days will be inserted here by JavaScript -->
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Data will be inserted here by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Add Employee Modal -->
+        <div class="modal fade" id="addEmployeeModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Add New Employee</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="employee-form">
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="weone-id" class="form-label">WE ONE ID</label>
+                                    <input type="text" class="form-control" id="weone-id" required>
+                                    <div id="weone-id-error" class="text-danger" style="display: none;">This WE ONE ID already exists</div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="ek-id" class="form-label">EK ID</label>
+                                    <input type="text" class="form-control" id="ek-id" required>
+                                    <div id="ek-id-error" class="text-danger" style="display: none;">This EK ID already exists</div>
+                                </div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="employee-name" class="form-label">Employee Name</label>
+                                    <input type="text" class="form-control" id="employee-name" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="area" class="form-label">AREA</label>
+                                    <select class="form-select" id="area" required>
+                                        <option value="FG8 BDN/ACP/DLV">FG8 BDN/ACP/DLV</option>
+                                        <option value="FG2 & FedEx">FG2 & FedEx</option>
+                                        <option value="FG5B Acceptance">FG5B Acceptance</option>
+                                        <option value="FG5B ACCP Loader">FG5B ACCP Loader</option>
+                                        <option value="FG4">FG4</option>
+                                        <option value="FG4 Export Ramp">FG4 Export Ramp</option>
+                                        <option value="FG5 Delivery CA">FG5 Delivery CA</option>
+                                        <option value="FG5 Breakdown CA">FG5 Breakdown CA</option>
+                                        <option value="FG5 RFS DOCK CA">FG5 RFS DOCK CA</option>
+                                        <option value="FG5 Ramp ULD F.L.O">FG5 Ramp ULD F.L.O</option>
+                                        <option value="FG5-IMPORT BREAKDOWN">FG5-IMPORT BREAKDOWN</option>
+                                        <option value="FG5 DELIVERY F.L.O">FG5 DELIVERY F.L.O</option>
+                                        <option value="FG5 BREAKDOWN LOADERS">FG5 BREAKDOWN LOADERS</option>
+                                        <option value="FG5 DELIVERY LOADERS">FG5 DELIVERY LOADERS</option>
+                                        <option value="FG5 CASUAL POOL LOADER">FG5 CASUAL POOL LOADER</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="designation" class="form-label">DESIGNATION</label>
+                                    <select class="form-select" id="designation" required>
+                                        <option value="LOADER">LOADER</option>
+                                        <option value="Tractor Driver">Tractor Driver</option>
+                                        <option value="Forklift Operator">Forklift Operator</option>
+                                        <option value="Cargo Agent">Cargo Agent</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary" id="confirm-add">Add Employee</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add Department Modal -->
+        <div class="modal fade" id="addDepartmentModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Add New Department</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="department-form">
+                            <div class="row mb-3">
+                                <div class="col-md-12">
+                                    <label for="department-name" class="form-label">Department Name</label>
+                                    <input type="text" class="form-control" id="department-name" required>
+                                    <div id="department-name-error" class="text-danger" style="display: none;">This department name already exists</div>
+                                </div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="department-areas" class="form-label">Areas (comma separated)</label>
+                                    <textarea class="form-control" id="department-areas" rows="5" required></textarea>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="department-designations" class="form-label">Designations (comma separated)</label>
+                                    <textarea class="form-control" id="department-designations" rows="5" required></textarea>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary" id="confirm-add-department">Add Department</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Next Month Confirmation Modal -->
+        <div class="modal fade" id="nextMonthModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Create Next Month Roster</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p>Are you sure you want to create a new roster for <span id="next-month-name"></span>?</p>
+                        <p>This will duplicate all employee information (WE ONE ID, EK ID, Name, Area, Designation) and create a new roster with default shifts (YY) for the next month.</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary" id="confirm-next-month">Create Roster</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Password Reset Modal -->
+        <div class="modal fade" id="resetPasswordModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Reset Password</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="reset-password-form">
+                            <div class="mb-3">
+                                <label for="reset-email" class="form-label">Email Address</label>
+                                <input type="email" class="form-control" id="reset-email" required>
+                            </div>
+                        </form>
+                        <div id="reset-password-message" class="alert mt-3" style="display: none;"></div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary" id="confirm-reset-password">Send Reset Link</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase and other JS libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    
+    <script>
+        // Initialize jsPDF
+        const { jsPDF } = window.jspdf;
+        
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyBnJ0m0QnNyC4pnv-dBEgC3yiq65YPwZvM",
+            authDomain: "weone-roster.firebaseapp.com",
+            databaseURL: "https://weone-roster-default-rtdb.firebaseio.com",
+            projectId: "weone-roster",
+            storageBucket: "weone-roster.firebasestorage.app",
+            messagingSenderId: "335364720116",
+            appId: "1:335364720116:web:ae669c448aba3788aca5a1",
+            measurementId: "G-Z8MBXC4ZFR"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+        const auth = firebase.auth();
+
+        // DOM elements
+        const loginContainer = document.getElementById('login-container');
+        const loginForm = document.getElementById('login-form');
+        const loginError = document.getElementById('login-error');
+        const appContainer = document.getElementById('app-container');
+        const logoutBtn = document.getElementById('logout-btn');
+        const forgotPasswordLink = document.getElementById('forgot-password');
+        const resetPasswordModal = new bootstrap.Modal(document.getElementById('resetPasswordModal'));
+        const resetPasswordForm = document.getElementById('reset-password-form');
+        const resetPasswordMessage = document.getElementById('reset-password-message');
+        const confirmResetPasswordBtn = document.getElementById('confirm-reset-password');
+        
+        const rosterTable = document.getElementById('roster-table');
+        const tbody = rosterTable.querySelector('tbody');
+        const loadingDiv = document.querySelector('.loading');
+        const saveBtn = document.getElementById('save-btn');
+        const addRowBtn = document.getElementById('add-row-btn');
+        const exportBtn = document.getElementById('export-btn');
+        const nextMonthBtn = document.getElementById('next-month-btn');
+        const printBtn = document.getElementById('print-btn');
+        const printDropdownMenu = document.getElementById('print-dropdown-menu');
+        const departmentBtn = document.getElementById('department-btn');
+        const departmentDropdownMenu = document.getElementById('department-dropdown-menu');
+        const searchName = document.getElementById('search-name');
+        const searchId = document.getElementById('search-id');
+        const filterArea = document.getElementById('filter-area');
+        const filterDesignation = document.getElementById('filter-designation');
+        const addEmployeeModal = new bootstrap.Modal(document.getElementById('addEmployeeModal'));
+        const addDepartmentModal = new bootstrap.Modal(document.getElementById('addDepartmentModal'));
+        const nextMonthModal = new bootstrap.Modal(document.getElementById('nextMonthModal'));
+        const confirmAddBtn = document.getElementById('confirm-add');
+        const confirmAddDepartmentBtn = document.getElementById('confirm-add-department');
+        const confirmNextMonthBtn = document.getElementById('confirm-next-month');
+        const weoneIdInput = document.getElementById('weone-id');
+        const ekIdInput = document.getElementById('ek-id');
+        const departmentNameInput = document.getElementById('department-name');
+        const departmentAreasInput = document.getElementById('department-areas');
+        const departmentDesignationsInput = document.getElementById('department-designations');
+        const weoneIdError = document.getElementById('weone-id-error');
+        const ekIdError = document.getElementById('ek-id-error');
+        const departmentNameError = document.getElementById('department-name-error');
+        const rosterTitle = document.getElementById('roster-title');
+        const departmentTitle = document.getElementById('department-title');
+        const nextMonthNameSpan = document.getElementById('next-month-name');
+
+        // Global variables
+        let rosterData = [];
+        let days = [];
+        let dates = [];
+        let currentMonth = 4; // May (0-indexed)
+        let currentYear = 2025;
+        let currentDepartment = "DNATA";
+        let departments = {
+            "DNATA": {
+                areas: [
+                    "FG8 BDN/ACP/DLV",
+                    "FG2 & FedEx",
+                    "FG5B Acceptance",
+                    "FG5B ACCP Loader",
+                    "FG4",
+                    "FG4 Export Ramp",
+                    "FG5 Delivery CA",
+                    "FG5 Breakdown CA",
+                    "FG5 RFS DOCK CA",
+                    "FG5 Ramp ULD F.L.O",
+                    "FG5-IMPORT BREAKDOWN",
+                    "FG5 DELIVERY F.L.O",
+                    "FG5 BREAKDOWN LOADERS",
+                    "FG5 DELIVERY LOADERS",
+                    "FG5 CASUAL POOL LOADER"
+                ],
+                designations: [
+                    "LOADER",
+                    "Tractor Driver",
+                    "Forklift Operator",
+                    "Cargo Agent"
+                ]
+            }
+        };
+        const monthNames = ["JANUARY", "FEBRUARY", "MARCH", "APRIL", "MAY", "JUNE", "JULY", "AUGUST", "SEPTEMBER", "OCTOBER", "NOVEMBER", "DECEMBER"];
+
+        // Status options with colors and shift times
+        const statusOptions = [
+            { value: 'VI', text: 'VI', color: '#e3f2fd', description: 'Vacation/Leave' },
+            { value: 'VJ', text: 'VJ', color: '#fff8e1', description: 'Vacation/Job' },
+            { value: 'YY', text: 'YY', color: '#e8f5e9', description: '(00:00-00:00)' },
+            { value: 'NB', text: 'NB', color: '#ffebee', description: '(06:00-19:00)' },
+            { value: 'DF', text: 'DF', color: '#f3e5f5', description: '(18:00-07:00)' },
+            { value: 'EX', text: 'EX', color: '#e0f7fa', description: '(08:00-20:00)' },
+            { value: 'NR', text: 'NR', color: '#fff3e0', description: '(20:00-08:00)' },
+            { value: 'DX', text: 'DX', color: '#e8eaf6', description: '(09:00-21:00)' },
+            { value: 'NI', text: 'NI', color: '#f1f8e9', description: '(21:00-09:00)' }
+        ];
+
+        // Initialize the app
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check if user is already logged in
+            auth.onAuthStateChanged(user => {
+                if (user) {
+                    // User is signed in
+                    loginContainer.style.display = 'none';
+                    appContainer.style.display = 'block';
+                    initializeApp();
+                } else {
+                    // No user is signed in
+                    loginContainer.style.display = 'flex';
+                    appContainer.style.display = 'none';
+                }
+            });
+            
+            // Setup login form
+            loginForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const email = document.getElementById('email').value;
+                const password = document.getElementById('password').value;
+                
+                // Simple validation
+                if (!email || !password) {
+                    showLoginError('Please enter both email and password');
+                    return;
+                }
+                
+                // Sign in with email and password
+                auth.signInWithEmailAndPassword(email, password)
+                    .then(() => {
+                        loginContainer.style.display = 'none';
+                        appContainer.style.display = 'block';
+                        initializeApp();
+                    })
+                    .catch(error => {
+                        showLoginError(getAuthErrorMessage(error));
+                        console.error('Login error:', error);
+                    });
+            });
+            
+            // Setup logout button
+            logoutBtn.addEventListener('click', function() {
+                auth.signOut().then(() => {
+                    loginContainer.style.display = 'flex';
+                    appContainer.style.display = 'none';
+                    document.getElementById('email').value = '';
+                    document.getElementById('password').value = '';
+                    loginError.style.display = 'none';
+                }).catch(error => {
+                    console.error('Logout error:', error);
+                });
+            });
+            
+            // Setup forgot password link
+            forgotPasswordLink.addEventListener('click', function(e) {
+                e.preventDefault();
+                resetPasswordModal.show();
+            });
+            
+            // Setup reset password form
+            confirmResetPasswordBtn.addEventListener('click', function() {
+                const email = document.getElementById('reset-email').value;
+                
+                if (!email) {
+                    showResetPasswordMessage('Please enter your email address', 'danger');
+                    return;
+                }
+                
+                auth.sendPasswordResetEmail(email)
+                    .then(() => {
+                        showResetPasswordMessage('Password reset email sent. Please check your inbox.', 'success');
+                        resetPasswordForm.reset();
+                    })
+                    .catch(error => {
+                        showResetPasswordMessage(getAuthErrorMessage(error), 'danger');
+                        console.error('Password reset error:', error);
+                    });
+            });
+        });
+
+        function getAuthErrorMessage(error) {
+            switch (error.code) {
+                case 'auth/invalid-email':
+                    return 'Invalid email address';
+                case 'auth/user-disabled':
+                    return 'This account has been disabled';
+                case 'auth/user-not-found':
+                    return 'No account found with this email';
+                case 'auth/wrong-password':
+                    return 'Incorrect password';
+                case 'auth/too-many-requests':
+                    return 'Too many attempts. Please try again later.';
+                case 'auth/email-already-in-use':
+                    return 'Email already in use';
+                case 'auth/weak-password':
+                    return 'Password should be at least 6 characters';
+                default:
+                    return 'Error: ' + error.message;
+            }
+        }
+
+        function showResetPasswordMessage(message, type) {
+            resetPasswordMessage.textContent = message;
+            resetPasswordMessage.className = `alert alert-${type} mt-3`;
+            resetPasswordMessage.style.display = 'block';
+        }
+
+        function showLoginError(message) {
+            loginError.textContent = message;
+            loginError.style.display = 'block';
+        }
+
+        function initializeApp() {
+            showLoading();
+            initializeDaysAndDates();
+            loadDepartments();
+            loadRosterData();
+            setupEventListeners();
+            updateRosterTitle();
+            populatePrintDropdown();
+        }
+
+        function showLoading() {
+            loadingDiv.style.display = 'flex';
+        }
+
+        function hideLoading() {
+            loadingDiv.style.display = 'none';
+        }
+
+        function updateRosterTitle() {
+            rosterTitle.textContent = `FG8 ${monthNames[currentMonth]} ${currentYear} CONSOLIDATED ROSTER`;
+            departmentTitle.textContent = `Department: ${currentDepartment}`;
+        }
+
+        function populatePrintDropdown() {
+            printDropdownMenu.innerHTML = '';
+            
+            // Add header
+            const header = document.createElement('li');
+            header.innerHTML = '<h6 class="dropdown-header">Select Shift to Print</h6>';
+            printDropdownMenu.appendChild(header);
+            
+            // Add status options
+            statusOptions.forEach(status => {
+                if (status.value !== 'VI' && status.value !== 'VJ') { // Exclude vacation statuses
+                    const item = document.createElement('li');
+                    const link = document.createElement('a');
+                    link.className = 'dropdown-item';
+                    link.href = '#';
+                    link.textContent = `${status.value} - ${status.description}`;
+                    link.dataset.status = status.value;
+                    link.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        printShiftEmployees(this.dataset.status);
+                    });
+                    item.appendChild(link);
+                    printDropdownMenu.appendChild(item);
+                }
+            });
+            
+            // Add divider
+            const divider = document.createElement('li');
+            divider.innerHTML = '<hr class="dropdown-divider">';
+            printDropdownMenu.appendChild(divider);
+            
+            // Add option to print all shifts
+            const allItem = document.createElement('li');
+            const allLink = document.createElement('a');
+            allLink.className = 'dropdown-item';
+            allLink.href = '#';
+            allLink.textContent = 'All Shifts (Grouped by Designation)';
+            allLink.addEventListener('click', function(e) {
+                e.preventDefault();
+                printAllShifts();
+            });
+            allItem.appendChild(allLink);
+            printDropdownMenu.appendChild(allItem);
+        }
+
+        function populateDepartmentDropdown() {
+            departmentDropdownMenu.innerHTML = '';
+            
+            // Add header
+            const header = document.createElement('li');
+            header.innerHTML = '<h6 class="dropdown-header">Select Department</h6>';
+            departmentDropdownMenu.appendChild(header);
+            
+            // Add department options
+            Object.keys(departments).forEach(department => {
+                const item = document.createElement('li');
+                const link = document.createElement('a');
+                link.className = 'dropdown-item';
+                link.href = '#';
+                link.textContent = department;
+                link.dataset.department = department;
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    switchDepartment(this.dataset.department);
+                });
+                item.appendChild(link);
+                departmentDropdownMenu.appendChild(item);
+            });
+            
+            // Add divider
+            const divider = document.createElement('li');
+            divider.innerHTML = '<hr class="dropdown-divider">';
+            departmentDropdownMenu.appendChild(divider);
+            
+            // Add option to add new department
+            const addItem = document.createElement('li');
+            const addLink = document.createElement('a');
+            addLink.className = 'dropdown-item';
+            addLink.href = '#';
+            addLink.textContent = 'Add New Department';
+            addLink.dataset.bsToggle = 'modal';
+            addLink.dataset.bsTarget = '#addDepartmentModal';
+            addItem.appendChild(addLink);
+            departmentDropdownMenu.appendChild(addItem);
+        }
+
+        function printShiftEmployees(status) {
+            const doc = new jsPDF();
+            const statusInfo = statusOptions.find(s => s.value === status);
+            const statusTitle = `${statusInfo.value} - ${statusInfo.description}`;
+            
+            // Group employees by designation
+            const employeesByDesignation = {};
+            
+            rosterData.forEach(employee => {
+                if (employee.days && employee.days.includes(status)) {
+                    if (!employeesByDesignation[employee.designation]) {
+                        employeesByDesignation[employee.designation] = [];
+                    }
+                    employeesByDesignation[employee.designation].push(employee);
+                }
+            });
+            
+            // Add title
+            doc.setFontSize(16);
+            doc.text(`Employees with ${statusTitle} Shift`, 14, 15);
+            doc.setFontSize(12);
+            doc.text(`Roster: ${monthNames[currentMonth]} ${currentYear}`, 14, 22);
+            doc.text(`Department: ${currentDepartment}`, 14, 29);
+            doc.text(`Printed on: ${new Date().toLocaleDateString()}`, 14, 36);
+            
+            let yPosition = 50;
+            
+            // Add tables for each designation group
+            Object.keys(employeesByDesignation).forEach(designation => {
+                const employees = employeesByDesignation[designation];
+                
+                // Add designation header
+                doc.setFontSize(14);
+                doc.text(`Designation: ${designation}`, 14, yPosition);
+                yPosition += 10;
+                
+                // Prepare table data
+                const tableData = employees.map((emp, index) => [
+                    index + 1,
+                    emp.weoneId || '',
+                    emp.ekId || '',
+                    emp.name || '',
+                    emp.area || ''
+                ]);
+                
+                // Add table
+                doc.autoTable({
+                    head: [['#', 'WE ONE ID', 'EK ID', 'Name', 'Area']],
+                    body: tableData,
+                    startY: yPosition,
+                    margin: { top: 10 },
+                    styles: { fontSize: 10 },
+                    headStyles: { fillColor: [52, 58, 64] }
+                });
+                
+                // Update yPosition for next table
+                yPosition = doc.lastAutoTable.finalY + 15;
+                
+                // Add new page if we're getting close to the bottom
+                if (yPosition > 250) {
+                    doc.addPage();
+                    yPosition = 20;
+                }
+            });
+            
+            // Save the PDF
+            doc.save(`Employees_${status}_${monthNames[currentMonth]}_${currentYear}_${currentDepartment}.pdf`);
+        }
+
+        function printAllShifts() {
+            const doc = new jsPDF();
+            
+            // Add title
+            doc.setFontSize(16);
+            doc.text(`All Employees Grouped by Designation`, 14, 15);
+            doc.setFontSize(12);
+            doc.text(`Roster: ${monthNames[currentMonth]} ${currentYear}`, 14, 22);
+            doc.text(`Department: ${currentDepartment}`, 14, 29);
+            doc.text(`Printed on: ${new Date().toLocaleDateString()}`, 14, 36);
+            
+            let yPosition = 50;
+            
+            // Group employees by designation
+            const employeesByDesignation = {};
+            
+            rosterData.forEach(employee => {
+                if (!employeesByDesignation[employee.designation]) {
+                    employeesByDesignation[employee.designation] = [];
+                }
+                employeesByDesignation[employee.designation].push(employee);
+            });
+            
+            // Add tables for each designation group
+            Object.keys(employeesByDesignation).forEach(designation => {
+                const employees = employeesByDesignation[designation];
+                
+                // Add designation header
+                doc.setFontSize(14);
+                doc.text(`Designation: ${designation}`, 14, yPosition);
+                yPosition += 10;
+                
+                // Prepare table data
+                const tableData = employees.map((emp, index) => [
+                    index + 1,
+                    emp.weoneId || '',
+                    emp.ekId || '',
+                    emp.name || '',
+                    emp.area || '',
+                    emp.days ? emp.days.join(', ') : ''
+                ]);
+                
+                // Add table
+                doc.autoTable({
+                    head: [['#', 'WE ONE ID', 'EK ID', 'Name', 'Area', 'Shifts']],
+                    body: tableData,
+                    startY: yPosition,
+                    margin: { top: 10 },
+                    styles: { fontSize: 8 }, // Smaller font to fit all shifts
+                    headStyles: { fillColor: [52, 58, 64] },
+                    columnStyles: {
+                        5: { cellWidth: 'auto' } // Make shifts column auto-width
+                    }
+                });
+                
+                // Update yPosition for next table
+                yPosition = doc.lastAutoTable.finalY + 15;
+                
+                // Add new page if we're getting close to the bottom
+                if (yPosition > 250) {
+                    doc.addPage();
+                    yPosition = 20;
+                }
+            });
+            
+            // Save the PDF
+            doc.save(`All_Employees_${monthNames[currentMonth]}_${currentYear}_${currentDepartment}.pdf`);
+        }
+
+        function initializeDaysAndDates() {
+            days = [];
+            dates = [];
+            
+            // Get the number of days in the current month
+            const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+            const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            
+            // Generate days and dates for the current month
+            for (let i = 1; i <= daysInMonth; i++) {
+                const currentDate = new Date(currentYear, currentMonth, i);
+                const dayName = dayNames[currentDate.getDay()];
+                
+                days.push(dayName);
+                dates.push(i);
+            }
+            
+            // Clear and rebuild day headers in the table
+            const thead = rosterTable.querySelector('thead');
+            const headerRow = thead.querySelector('tr');
+            
+            // Remove existing day headers (keep first 6 columns)
+            while (headerRow.children.length > 6) {
+                headerRow.removeChild(headerRow.lastChild);
+            }
+            
+            // Add new day headers
+            days.forEach((day, index) => {
+                const th = document.createElement('th');
+                
+                // Create container for day and date
+                const dayContainer = document.createElement('div');
+                dayContainer.style.display = 'flex';
+                dayContainer.style.flexDirection = 'column';
+                dayContainer.style.alignItems = 'center';
+                
+                // Add day name
+                const dayElement = document.createElement('div');
+                dayElement.textContent = day;
+                
+                // Add date number
+                const dateElement = document.createElement('div');
+                dateElement.textContent = dates[index];
+                dateElement.classList.add('day-date');
+                
+                dayContainer.appendChild(dayElement);
+                dayContainer.appendChild(dateElement);
+                th.appendChild(dayContainer);
+                
+                headerRow.appendChild(th);
+            });
+        }
+
+        function loadDepartments() {
+            database.ref('departments').once('value').then((snapshot) => {
+                const data = snapshot.val();
+                if (data) {
+                    departments = data;
+                    if (!departments["DNATA"]) {
+                        departments["DNATA"] = {
+                            areas: [
+                                "FG8 BDN/ACP/DLV",
+                                "FG2 & FedEx",
+                                "FG5B Acceptance",
+                                "FG5B ACCP Loader",
+                                "FG4",
+                                "FG4 Export Ramp",
+                                "FG5 Delivery CA",
+                                "FG5 Breakdown CA",
+                                "FG5 RFS DOCK CA",
+                                "FG5 Ramp ULD F.L.O",
+                                "FG5-IMPORT BREAKDOWN",
+                                "FG5 DELIVERY F.L.O",
+                                "FG5 BREAKDOWN LOADERS",
+                                "FG5 DELIVERY LOADERS",
+                                "FG5 CASUAL POOL LOADER"
+                            ],
+                            designations: [
+                                "LOADER",
+                                "Tractor Driver",
+                                "Forklift Operator",
+                                "Cargo Agent"
+                            ]
+                        };
+                    }
+                    populateDepartmentDropdown();
+                }
+            }).catch((error) => {
+                console.error("Error loading departments:", error);
+            });
+        }
+
+        function loadRosterData() {
+            // Load data for the current month, year and department
+            const monthYearKey = `${currentYear}-${currentMonth}`;
+            database.ref(`rosters/${currentDepartment}/${monthYearKey}`).once('value').then((snapshot) => {
+                const data = snapshot.val();
+                if (data) {
+                    rosterData = Object.values(data);
+                    renderRosterTable();
+                } else {
+                    // If no data exists for this month, check if we should initialize from previous month
+                    if (currentMonth > 0) { // Not January
+                        const prevMonth = currentMonth - 1;
+                        const prevMonthYearKey = `${currentYear}-${prevMonth}`;
+                        
+                        database.ref(`rosters/${currentDepartment}/${prevMonthYearKey}`).once('value').then((prevSnapshot) => {
+                            const prevData = prevSnapshot.val();
+                            if (prevData) {
+                                // Initialize new month with employee data from previous month but empty days
+                                rosterData = Object.values(prevData).map(employee => {
+                                    return {
+                                        weoneId: employee.weoneId,
+                                        ekId: employee.ekId,
+                                        name: employee.name,
+                                        area: employee.area,
+                                        designation: employee.designation,
+                                        days: Array(days.length).fill('YY') // Default all days to YY
+                                    };
+                                });
+                                renderRosterTable();
+                            } else {
+                                // No previous data either
+                                rosterData = [];
+                                renderRosterTable();
+                            }
+                        });
+                    } else {
+                        // No data exists, initialize with empty array
+                        rosterData = [];
+                        renderRosterTable();
+                    }
+                }
+                hideLoading();
+            }).catch((error) => {
+                console.error("Error loading roster data:", error);
+                hideLoading();
+                alert("Error loading roster data. Please try again.");
+            });
+        }
+
+        function renderRosterTable(filteredData = null) {
+            tbody.innerHTML = '';
+            const dataToRender = filteredData || rosterData;
+            
+            // Update area and designation dropdowns based on current department
+            updateFilterDropdowns();
+            
+            dataToRender.forEach((employee, index) => {
+                const row = document.createElement('tr');
+                
+                // Serial Number
+                const srNoCell = document.createElement('td');
+                srNoCell.textContent = index + 1;
+                srNoCell.classList.add('sticky-col');
+                row.appendChild(srNoCell);
+                
+                // WE ONE ID (editable)
+                const weoneIdCell = document.createElement('td');
+                const weoneIdInput = document.createElement('input');
+                weoneIdInput.type = 'text';
+                weoneIdInput.classList.add('editable-input');
+                weoneIdInput.value = employee.weoneId || '';
+                weoneIdInput.addEventListener('change', function() {
+                    rosterData[index].weoneId = this.value;
+                });
+                weoneIdCell.appendChild(weoneIdInput);
+                row.appendChild(weoneIdCell);
+                
+                // EK ID (editable)
+                const ekIdCell = document.createElement('td');
+                const ekIdInput = document.createElement('input');
+                ekIdInput.type = 'text';
+                ekIdInput.classList.add('editable-input');
+                ekIdInput.value = employee.ekId || '';
+                ekIdInput.addEventListener('change', function() {
+                    rosterData[index].ekId = this.value;
+                });
+                ekIdCell.appendChild(ekIdInput);
+                row.appendChild(ekIdCell);
+                
+                // Employee Name (editable)
+                const nameCell = document.createElement('td');
+                const nameInput = document.createElement('input');
+                nameInput.type = 'text';
+                nameInput.classList.add('editable-input');
+                nameInput.value = employee.name || '';
+                nameInput.addEventListener('change', function() {
+                    rosterData[index].name = this.value;
+                });
+                nameCell.appendChild(nameInput);
+                row.appendChild(nameCell);
+                
+                // AREA (dropdown)
+                const areaCell = document.createElement('td');
+                const areaSelect = document.createElement('select');
+                areaSelect.classList.add('editable-select');
+                
+                // Add area options from current department
+                departments[currentDepartment].areas.forEach(area => {
+                    const option = document.createElement('option');
+                    option.value = area;
+                    option.textContent = area;
+                    areaSelect.appendChild(option);
+                });
+                
+                // Set current value
+                areaSelect.value = employee.area || departments[currentDepartment].areas[0];
+                areaSelect.addEventListener('change', function() {
+                    rosterData[index].area = this.value;
+                });
+                areaCell.appendChild(areaSelect);
+                row.appendChild(areaCell);
+                
+                // DESIGNATION (dropdown)
+                const designationCell = document.createElement('td');
+                const designationSelect = document.createElement('select');
+                designationSelect.classList.add('editable-select');
+                
+                // Add designation options from current department
+                departments[currentDepartment].designations.forEach(designation => {
+                    const option = document.createElement('option');
+                    option.value = designation;
+                    option.textContent = designation;
+                    designationSelect.appendChild(option);
+                });
+                
+                // Set current value
+                designationSelect.value = employee.designation || departments[currentDepartment].designations[0];
+                designationSelect.addEventListener('change', function() {
+                    rosterData[index].designation = this.value;
+                });
+                designationCell.appendChild(designationSelect);
+                row.appendChild(designationCell);
+                
+                // Day status cells with dropdowns
+                days.forEach((day, dayIndex) => {
+                    const dayCell = document.createElement('td');
+                    dayCell.classList.add('status-cell');
+                    
+                    // Create dropdown select element
+                    const select = document.createElement('select');
+                    select.classList.add('status-select');
+                    select.setAttribute('data-row', index);
+                    select.setAttribute('data-day', dayIndex);
+                    
+                    // Add status options
+                    statusOptions.forEach(option => {
+                        const optElement = document.createElement('option');
+                        optElement.value = option.value;
+                        optElement.textContent = `${option.text} - ${option.description}`;
+                        select.appendChild(optElement);
+                    });
+                    
+                    // Set current value
+                    const currentValue = employee.days && employee.days[dayIndex] ? employee.days[dayIndex] : 'YY';
+                    select.value = currentValue;
+                    
+                    // Find the color for current status
+                    const currentStatus = statusOptions.find(o => o.value === currentValue);
+                    dayCell.style.backgroundColor = currentStatus ? currentStatus.color : '#e8f5e9';
+                    
+                    // Add change event listener
+                    select.addEventListener('change', function() {
+                        const rowIndex = parseInt(this.getAttribute('data-row'));
+                        const dayIndex = parseInt(this.getAttribute('data-day'));
+                        const newValue = this.value;
+                        
+                        // Update the data model
+                        if (!rosterData[rowIndex].days) {
+                            rosterData[rowIndex].days = Array(days.length).fill('YY');
+                        }
+                        rosterData[rowIndex].days[dayIndex] = newValue;
+                        
+                        // Update the cell color
+                        const selectedOption = statusOptions.find(o => o.value === newValue);
+                        dayCell.style.backgroundColor = selectedOption ? selectedOption.color : '#e8f5e9';
+                    });
+                    
+                    dayCell.appendChild(select);
+                    row.appendChild(dayCell);
+                });
+                
+                tbody.appendChild(row);
+            });
+        }
+
+        function updateFilterDropdowns() {
+            // Update area filter dropdown
+            filterArea.innerHTML = '<option value="">All Areas</option>';
+            departments[currentDepartment].areas.forEach(area => {
+                const option = document.createElement('option');
+                option.value = area;
+                option.textContent = area;
+                filterArea.appendChild(option);
+            });
+            
+            // Update designation filter dropdown
+            filterDesignation.innerHTML = '<option value="">All Designations</option>';
+            departments[currentDepartment].designations.forEach(designation => {
+                const option = document.createElement('option');
+                option.value = designation;
+                option.textContent = designation;
+                filterDesignation.appendChild(option);
+            });
+        }
+
+        function setupEventListeners() {
+            // Save button
+            saveBtn.addEventListener('click', saveRosterData);
+            
+            // Add row button
+            addRowBtn.addEventListener('click', () => {
+                addEmployeeModal.show();
+            });
+            
+            // Export button
+            exportBtn.addEventListener('click', exportToExcel);
+            
+            // Next month button
+            nextMonthBtn.addEventListener('click', prepareNextMonth);
+            
+            // Confirm add employee
+            confirmAddBtn.addEventListener('click', addNewEmployee);
+            
+            // Confirm add department
+            confirmAddDepartmentBtn.addEventListener('click', addNewDepartment);
+            
+            // Confirm next month
+            confirmNextMonthBtn.addEventListener('click', createNextMonthRoster);
+            
+            // Search/filter events
+            searchName.addEventListener('input', filterRoster);
+            searchId.addEventListener('input', filterRoster);
+            filterArea.addEventListener('change', filterRoster);
+            filterDesignation.addEventListener('change', filterRoster);
+            
+            // Check for duplicate IDs when typing
+            weoneIdInput.addEventListener('input', checkDuplicateWeOneId);
+            ekIdInput.addEventListener('input', checkDuplicateEkId);
+            departmentNameInput.addEventListener('input', checkDuplicateDepartmentName);
+        }
+
+        function checkDuplicateWeOneId() {
+            const weoneId = weoneIdInput.value.trim();
+            const exists = rosterData.some(emp => emp.weoneId && emp.weoneId.toString() === weoneId);
+            weoneIdError.style.display = exists ? 'block' : 'none';
+            return exists;
+        }
+
+        function checkDuplicateEkId() {
+            const ekId = ekIdInput.value.trim();
+            const exists = rosterData.some(emp => emp.ekId && emp.ekId.toString() === ekId);
+            ekIdError.style.display = exists ? 'block' : 'none';
+            return exists;
+        }
+
+        function checkDuplicateDepartmentName() {
+            const departmentName = departmentNameInput.value.trim();
+            const exists = departments.hasOwnProperty(departmentName);
+            departmentNameError.style.display = exists ? 'block' : 'none';
+            return exists;
+        }
+
+        function filterRoster() {
+            const nameQuery = searchName.value.toLowerCase();
+            const idQuery = searchId.value.toLowerCase();
+            const areaFilter = filterArea.value;
+            const designationFilter = filterDesignation.value;
+            
+            const filteredData = rosterData.filter(employee => {
+                const nameMatch = employee.name?.toLowerCase().includes(nameQuery) || false;
+                const idMatch = 
+                    (employee.weoneId?.toString().toLowerCase().includes(idQuery) || false) ||
+                    (employee.ekId?.toString().toLowerCase().includes(idQuery) || false);
+                const areaMatch = areaFilter ? employee.area === areaFilter : true;
+                const designationMatch = designationFilter ? employee.designation === designationFilter : true;
+                
+                return nameMatch && idMatch && areaMatch && designationMatch;
+            });
+            
+            renderRosterTable(filteredData);
+        }
+
+        function addNewEmployee() {
+            const weoneId = weoneIdInput.value.trim();
+            const ekId = ekIdInput.value.trim();
+            const name = document.getElementById('employee-name').value.trim();
+            const area = document.getElementById('area').value;
+            const designation = document.getElementById('designation').value;
+            
+            if (!weoneId || !ekId || !name || !area || !designation) {
+                alert('Please fill in all required fields');
+                return;
+            }
+            
+            // Check for duplicates
+            const weoneIdExists = checkDuplicateWeOneId();
+            const ekIdExists = checkDuplicateEkId();
+            
+            if (weoneIdExists || ekIdExists) {
+                alert('Please correct the duplicate ID errors before adding the employee');
+                return;
+            }
+            
+            const newEmployee = {
+                weoneId,
+                ekId,
+                name,
+                area,
+                designation,
+                days: Array(days.length).fill('YY') // Default all days to YY
+            };
+            
+            rosterData.push(newEmployee);
+            renderRosterTable();
+            addEmployeeModal.hide();
+            document.getElementById('employee-form').reset();
+            
+            // Hide any error messages
+            weoneIdError.style.display = 'none';
+            ekIdError.style.display = 'none';
+        }
+
+        function addNewDepartment() {
+            const departmentName = departmentNameInput.value.trim();
+            const areas = departmentAreasInput.value.split(',').map(area => area.trim()).filter(area => area);
+            const designations = departmentDesignationsInput.value.split(',').map(desig => desig.trim()).filter(desig => desig);
+            
+            if (!departmentName || areas.length === 0 || designations.length === 0) {
+                alert('Please fill in all required fields');
+                return;
+            }
+            
+            // Check for duplicate department name
+            const departmentExists = checkDuplicateDepartmentName();
+            if (departmentExists) {
+                alert('Please choose a different department name as this one already exists');
+                return;
+            }
+            
+            // Add new department
+            departments[departmentName] = {
+                areas: areas,
+                designations: designations
+            };
+            
+            // Save to Firebase
+            database.ref('departments').set(departments)
+                .then(() => {
+                    // Update UI
+                    populateDepartmentDropdown();
+                    addDepartmentModal.hide();
+                    document.getElementById('department-form').reset();
+                    departmentNameError.style.display = 'none';
+                    alert('Department added successfully!');
+                })
+                .catch((error) => {
+                    console.error("Error adding department:", error);
+                    alert('Error adding department. Please try again.');
+                });
+        }
+
+        function switchDepartment(department) {
+            if (department === currentDepartment) return;
+            
+            // First save current roster data
+            saveRosterData();
+            
+            // Then switch to new department
+            currentDepartment = department;
+            updateRosterTitle();
+            showLoading();
+            loadRosterData();
+        }
+
+        function saveRosterData() {
+            showLoading();
+            const monthYearKey = `${currentYear}-${currentMonth}`;
+            database.ref(`rosters/${currentDepartment}/${monthYearKey}`).set(rosterData)
+                .then(() => {
+                    hideLoading();
+                    alert('Roster data saved successfully!');
+                })
+                .catch((error) => {
+                    hideLoading();
+                    console.error("Error saving roster data:", error);
+                    alert('Error saving roster data. Please try again.');
+                });
+        }
+
+        function exportToExcel() {
+            // Prepare data for export
+            const exportData = [
+                ['Sr No', 'WE ONE ID', 'EK ID', 'Employee Name', 'AREA', 'DESIGNATION', ...days.map((day, i) => `${day} ${dates[i]}`)]
+            ];
+            
+            rosterData.forEach((employee, index) => {
+                const row = [
+                    index + 1,
+                    employee.weoneId || '',
+                    employee.ekId || '',
+                    employee.name || '',
+                    employee.area || '',
+                    employee.designation || '',
+                    ...(employee.days || Array(days.length).fill('YY'))
+                ];
+                exportData.push(row);
+            });
+            
+            // Create worksheet
+            const ws = XLSX.utils.aoa_to_sheet(exportData);
+            
+            // Create workbook
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'Roster');
+            
+            // Export to file
+            XLSX.writeFile(wb, `Roster_${monthNames[currentMonth]}_${currentYear}_${currentDepartment}.xlsx`);
+        }
+
+        function prepareNextMonth() {
+            // Calculate next month and year
+            let nextMonth = currentMonth + 1;
+            let nextYear = currentYear;
+            
+            if (nextMonth > 11) { // December -> January
+                nextMonth = 0;
+                nextYear++;
+            }
+            
+            // Update the modal text
+            nextMonthNameSpan.textContent = `${monthNames[nextMonth]} ${nextYear}`;
+            
+            // Show the confirmation modal
+            nextMonthModal.show();
+        }
+
+        function createNextMonthRoster() {
+            nextMonthModal.hide();
+            showLoading();
+            
+            // Calculate next month and year
+            currentMonth++;
+            if (currentMonth > 11) { // December -> January
+                currentMonth = 0;
+                currentYear++;
+            }
+            
+            // Update the title
+            updateRosterTitle();
+            
+            // Initialize days for the new month
+            initializeDaysAndDates();
+            
+            // Keep the same employee data but reset all days to YY
+            rosterData = rosterData.map(employee => {
+                return {
+                    weoneId: employee.weoneId,
+                    ekId: employee.ekId,
+                    name: employee.name,
+                    area: employee.area,
+                    designation: employee.designation,
+                    days: Array(days.length).fill('YY') // Reset all days to YY
+                };
+            });
+            
+            // Render the new table
+            renderRosterTable();
+            
+            // Save the new roster data
+            saveRosterData();
+        }
+    </script>
+</body>
+</html>
